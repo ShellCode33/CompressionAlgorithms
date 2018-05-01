@@ -141,10 +141,9 @@ class Huffman(BinaryTree):
         print("Total size output : {} bytes".format(total_file_size))
 
         if len(bytes_list) <= total_file_size:
-            print("No gain, you shouldn't compress that file. (+{} bytes)".format(total_file_size-len(bytes_list)))
+            raise Exception("Aborted. No gain, you shouldn't compress that file. (+{} bytes)".format(total_file_size-len(bytes_list)))
 
-        else:
-            print("Compression gain : {0:.2f}%".format(100-total_file_size * 100 / len(bytes_list)))
+        print("Compression gain : {0:.2f}%".format(100-total_file_size * 100 / len(bytes_list)))
 
         with open(output_filename, "wb") as output_file:
             output_file.write(to_store_in_the_file)
