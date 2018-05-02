@@ -3,6 +3,30 @@
 from binary_tree import *
 
 
+class HuffmanNode(Node):
+    """Unlike the classic Node, the HuffmanNode is sorted by frequency and not value.
+
+    Attributes
+    ----------
+    frequency : int
+        Holds the frequency of the byte(s).
+
+    """
+    def __init__(self, frequency=0, value=None):
+        super().__init__(value)
+        self.frequency = frequency
+
+    def __lt__(self, other):
+        return self.frequency < other.frequency
+
+    def __str__(self):
+
+        if self.is_leaf():
+            return "[{}]".format(self.value)
+
+        return "<{}> ( {} {} )".format(self.frequency, self.left, self.right)
+
+
 class Huffman(BinaryTree):
     """ This class is an implementation of the Huffman compression algorithm.
 
@@ -44,7 +68,7 @@ class Huffman(BinaryTree):
         byte occurrences).
         """
 
-        new_node = Node(left.sort_on + right.sort_on)
+        new_node = HuffmanNode(left.frequency + right.frequency)
         new_node.left = left
         new_node.right = right
         return new_node
@@ -73,14 +97,7 @@ class Huffman(BinaryTree):
         print("Occurrences: " + str(self.bytes_occurrences))
         print("Number of different bytes : {}".format(len(self.bytes_occurrences)))
 
-        tree_values = []
-
-        for byte in self.bytes_occurrences:
-            new_node = Node(byte)  # Leaf
-            new_node.sort_on = self.bytes_occurrences[byte]  # Nodes will be sorted by bytes occurrences
-            tree_values.append(new_node)
-
-        self.build_tree(tree_values)
+        self.build_tree([HuffmanNode(self.bytes_occurrences[byte], byte) for byte in self.bytes_occurrences])
 
         print("Tree: " + str(self.root_node))
         self.__create_huffman_code(self.root_node)
@@ -106,7 +123,7 @@ class Huffman(BinaryTree):
         """
         value = node.value
 
-        # If the node isn't a leaf, the node is represented as a 0 (it's ok to rebuild the tree).
+        # If the node isn't a leaf, the node is represented as a 0 (we can still rebuild the tree).
         if not node.is_leaf():
             value = 0
 
@@ -118,13 +135,16 @@ class Huffman(BinaryTree):
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
 
+        if len(bytes_list) == 0:
+            raise Exception("Input file is empty.")
+
         print("Input size : ", len(bytes_list))
         compressed = self.__compress(bytes_list)
         print("Compressed size : ", len(compressed))
 
         # Find inorder and preorder sequences of the tree, thanks to these values, we'll be able to rebuild the tree.
         # Each integers will be stored on 1 byte, and the first integer will be the number of bytes (minus one because
-        # we byte 256 doesn't exist
+        # the byte 256 doesn't exist)
         to_store_in_the_file = [len(self.bytes_occurrences)-1]
 
         self.traversal_values.clear()

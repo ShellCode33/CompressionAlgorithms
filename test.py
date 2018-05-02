@@ -5,4 +5,4 @@ from huffman import Huffman
 
 if __name__ == "__main__":
     huffman = Huffman()
-    huffman.compress_file("/home/shellcode/Downloads/test.c", "/tmp/huffman_encoded")
+    huffman.compress_file("/tmp/huffman", "/tmp/huffman_encoded")
