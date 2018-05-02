@@ -1,6 +1,6 @@
 # coding: utf-8
 
-from binary_tree import *
+from compress.utils.binary_tree import *
 
 
 class HuffmanNode(Node):
