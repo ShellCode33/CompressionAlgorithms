@@ -10,8 +10,6 @@ class Node(object):
     ----------
     value
         The value of the node
-    sort_on
-        The value which will be used to compare nodes. By default its value is the same as value's value.
     left : Node
         The left child node.
     right : Node
@@ -20,7 +18,6 @@ class Node(object):
 
     def __init__(self, value=None):
         self.value = value
-        self.sort_on = value
         self.left = None
         self.right = None
 
@@ -33,7 +30,7 @@ class Node(object):
 
     # Compares nodes between them : node1 < node2
     def __lt__(self, other):
-        return self.sort_on < other.sort_on
+        return self.value < other.value
 
     def is_leaf(self):
         return self.left is None and self.right is None
