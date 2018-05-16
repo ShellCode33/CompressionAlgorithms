@@ -58,7 +58,7 @@ class Huffman(BinaryTree):
         self.huffman_code = {}
         self.traversal_values = []
 
-    def create_node_from_children(self, left=None, right=None):
+    def create_node(self, left=None, right=None):
         """ Redefine parent's behavior.
 
         Notes
@@ -191,6 +191,6 @@ class Huffman(BinaryTree):
         print("Inorder : ", inorder)
         print("Preorder : ", preorder)
 
-        tree = self.build_tree_from(inorder, preorder, 0, len(inorder) - 1)
+        tree = self.build_tree_from(inorder, preorder)
 
         print("tree : ", tree)
