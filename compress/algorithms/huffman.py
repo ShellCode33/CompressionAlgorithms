@@ -64,11 +64,10 @@ class Huffman(BinaryTree):
         Notes
         -----
         Our algorithm only cares about tree leaves but we need the tree to be built depending on bytes occurrences,
-        that why newly created node's value will be an addition of children sort_on values (which are in this algorithm
-        byte occurrences).
+        that why newly created node's value will be an addition of children frequencies.
         """
 
-        new_node = HuffmanNode(left.frequency + right.frequency)
+        new_node = HuffmanNode(0 if left is None or right is None else left.frequency + right.frequency)
         new_node.left = left
         new_node.right = right
         return new_node
@@ -94,21 +93,19 @@ class Huffman(BinaryTree):
     def __compress(self, bytes_list):
 
         self.__find_bytes_occurrences(bytes_list)
-        print("Occurrences: " + str(self.bytes_occurrences))
+        # print("Occurrences: " + str(self.bytes_occurrences))
         print("Number of different bytes : {}".format(len(self.bytes_occurrences)))
 
         self.build_tree([HuffmanNode(self.bytes_occurrences[byte], byte) for byte in self.bytes_occurrences])
 
-        print("Tree: " + str(self.root_node))
+        # print("Tree: " + str(self.root_node))
         self.__create_huffman_code(self.root_node)
-        print("Code: " + str(self.huffman_code))
+        # print("Code: " + str(self.huffman_code))
 
         encoded_string = "1"  # Padding needed to convert to bytes, otherwise we will lose information (the first zeros)
 
         for byte in bytes_list:
             encoded_string += self.huffman_code[byte]
-
-        print("Encoded: " + encoded_string)
 
         # Convert to bytes array
         return int(encoded_string, 2).to_bytes((len(encoded_string)+7) // 8, byteorder='big')
