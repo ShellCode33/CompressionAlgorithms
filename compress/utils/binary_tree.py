@@ -68,6 +68,7 @@ class BinaryTree(object):
 
     # https://www.geeksforgeeks.org/construct-tree-from-given-inorder-and-preorder-traversal/
     def build_tree_from(self, inorder_values, preorder_values):
+        self.pre_order_index = 0  # Reset
         self.__build_tree_from(inorder_values, preorder_values, 0, len(inorder_values) - 1)
 
     def __build_tree_from(self, inorder_values, preorder_values, begin, end):
