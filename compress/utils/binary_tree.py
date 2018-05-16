@@ -46,6 +46,7 @@ class BinaryTree(object):
     """
     def __init__(self):
         self.root_node = None
+        self.preIndex = 0
 
     def build_tree(self, values):
 
@@ -66,8 +67,27 @@ class BinaryTree(object):
                 self.root_node = node1
 
     # https://www.geeksforgeeks.org/construct-tree-from-given-inorder-and-preorder-traversal/
-    def build_tree_from(self, inorder_values, preorder_values):
-        pass
+    def build_tree_from(self, inorder_values, preorder_values, inStart, inEnd):
+        if inStart > inEnd:
+            return None
+
+        self.preIndex += 1
+
+        if inStart == inEnd:
+            return self.create_node_from_children()
+
+        inIndex = inorder_values[inStart:inEnd+1].index(preorder_values[self.preIndex])
+
+        left = self.build_tree_from(inorder_values, preorder_values, inStart, inIndex - 1)
+        right = self.build_tree_from(inorder_values, preorder_values, inIndex + 1, inEnd)
+
+        return self.create_node_from_children(left, right)
+
+
+    def search(self, arr, start, end, value):
+        for i in range(start, end + 1):
+            if arr[i] == value:
+                return i
 
     def traversal_action(self, node):
         print(node.value)
@@ -99,7 +119,7 @@ class BinaryTree(object):
             if current_node.right is not None:
                 heappush(heap, current_node.right)
 
-    def create_node_from_children(self, left, right):
+    def create_node_from_children(self, left=None, right=None):
         """ The value of the node depends on the algorithm, that's why this method must be overwritten.
 
         Parameters
