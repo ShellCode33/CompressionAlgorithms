@@ -76,18 +76,12 @@ class BinaryTree(object):
         if inStart == inEnd:
             return self.create_node_from_children()
 
-        inIndex = inorder_values[inStart:inEnd+1].index(preorder_values[self.preIndex])
+        inIndex = inStart + inorder_values[inStart:inEnd+1].index(preorder_values[self.preIndex])
 
         left = self.build_tree_from(inorder_values, preorder_values, inStart, inIndex - 1)
         right = self.build_tree_from(inorder_values, preorder_values, inIndex + 1, inEnd)
 
         return self.create_node_from_children(left, right)
-
-
-    def search(self, arr, start, end, value):
-        for i in range(start, end + 1):
-            if arr[i] == value:
-                return i
 
     def traversal_action(self, node):
         print(node.value)
