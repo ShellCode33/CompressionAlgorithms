@@ -68,7 +68,7 @@ class Huffman(BinaryTree):
         byte occurrences).
         """
 
-        new_node = HuffmanNode(left.frequency + right.frequency)
+        new_node = HuffmanNode(0 if left is None or right is None else left.frequency + right.frequency)
         new_node.left = left
         new_node.right = right
         return new_node
@@ -147,7 +147,7 @@ class Huffman(BinaryTree):
 
         self.traversal_values.clear()
         self.inorder_traversal()
-        print("Inorder value : ", self.traversal_values)
+        print("Inorder : ", self.traversal_values)
 
         # Traversal values are coded on 2 bytes, 256 leaves possible with (n-1 = 255) other nodes in the tree
         to_store_in_the_file = len(self.traversal_values).to_bytes(2, byteorder='big')
@@ -157,7 +157,7 @@ class Huffman(BinaryTree):
 
         self.traversal_values.clear()
         self.preorder_traversal()
-        print("Preorder value : ", self.traversal_values)
+        print("Preorder : ", self.traversal_values)
         to_store_in_the_file += bytes(self.traversal_values)
 
         print("traversal_size = ", len(self.traversal_values))
