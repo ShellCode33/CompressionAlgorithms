@@ -46,7 +46,7 @@ class BinaryTree(object):
     """
     def __init__(self):
         self.root_node = None
-        self.preIndex = 0
+        self.pre_order_index = 0
 
     def build_tree(self, values):
 
@@ -60,34 +60,39 @@ class BinaryTree(object):
 
             try:
                 node2 = heappop(heap)
-                heappush(heap, self.create_node_from_children(node1, node2))
+                heappush(heap, self.create_node(node1, node2))
 
             # If node2 doesn't exist, it means the heap is empty and node1 is the final node
             except IndexError:
                 self.root_node = node1
 
     # https://www.geeksforgeeks.org/construct-tree-from-given-inorder-and-preorder-traversal/
-    def build_tree_from(self, inorder_values, preorder_values, inStart, inEnd):
-        if inStart > inEnd:
+    def build_tree_from(self, inorder_values, preorder_values):
+        self.pre_order_index = 0  # Reset
+        self.__build_tree_from(inorder_values, preorder_values, 0, len(inorder_values) - 1)
+
+    def __build_tree_from(self, inorder_values, preorder_values, begin, end):
+
+        if begin > end:
             return None
 
-        self.preIndex += 1
+        new_node = self.create_node()
+        new_node.value = preorder_values[self.pre_order_index]
+        self.pre_order_index += 1
 
-        if inStart == inEnd:
-            return self.create_node_from_children()
+        if begin == end:
+            return new_node
 
-        inIndex = inorder_values[inStart:inEnd+1].index(preorder_values[self.preIndex])
+        print("begin: {} --- end: {}".format(begin, end))
 
-        left = self.build_tree_from(inorder_values, preorder_values, inStart, inIndex - 1)
-        right = self.build_tree_from(inorder_values, preorder_values, inIndex + 1, inEnd)
+        inorder_index = begin + inorder_values[begin:end + 1].index(new_node.value)
 
-        return self.create_node_from_children(left, right)
+        new_node.left = self.__build_tree_from(inorder_values, preorder_values, begin, inorder_index - 1)
+        new_node.right = self.__build_tree_from(inorder_values, preorder_values, inorder_index + 1, end)
 
+        print("Node created. Its value is : ", new_node.value)
 
-    def search(self, arr, start, end, value):
-        for i in range(start, end + 1):
-            if arr[i] == value:
-                return i
+        return new_node
 
     def traversal_action(self, node):
         print(node.value)
@@ -119,7 +124,7 @@ class BinaryTree(object):
             if current_node.right is not None:
                 heappush(heap, current_node.right)
 
-    def create_node_from_children(self, left=None, right=None):
+    def create_node(self, left=None, right=None):
         """ The value of the node depends on the algorithm, that's why this method must be overwritten.
 
         Parameters
