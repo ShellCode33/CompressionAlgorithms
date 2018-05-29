@@ -38,8 +38,8 @@ class Huffman(BinaryTree):
     huffman_code : dict
         Association between a byte and its new code.
 
-    traversal_values : list
-        Stores results of a traversal.
+    encoded_tree : str
+        Contains the tree in a minimalist representation. This is a binary string that will be converted
 
     Notes
     -----
@@ -56,7 +56,7 @@ class Huffman(BinaryTree):
         super().__init__()
         self.bytes_occurrences = {}
         self.huffman_code = {}
-        self.traversal_values = []
+        self.encoded_tree = None
 
     def create_node(self, left=None, right=None):
         """ Redefine parent's behavior.
@@ -72,6 +72,22 @@ class Huffman(BinaryTree):
         new_node.left = left
         new_node.right = right
         return new_node
+
+    def traversal_action(self, node):
+        """Overwrites BinaryTree's default action.
+        In huffman, the traversal enables the creation of a binary minimalist representation of the tree in order
+        to store the tree space-efficiently.
+
+        Parameters
+        ----------
+        node : Node
+            The node to process.
+        """
+
+        if node.is_leaf():
+            self.encoded_tree += "1" + format(node.value, "08b")
+        else:
+            self.encoded_tree += "0"
 
     def __find_bytes_occurrences(self, bytes_list):
 
@@ -113,22 +129,6 @@ class Huffman(BinaryTree):
         # Convert to bytes array
         return int(encoded_string, 2).to_bytes((len(encoded_string) + 7) // 8, byteorder='big')
 
-    def traversal_action(self, node):
-        """Overwrites BinaryTree's default action.
-
-        Parameters
-        ----------
-        node : Node
-            The node to process.
-        """
-        value = node.value
-
-        # If the node isn't a leaf, the node is represented as a 0 (we can still rebuild the tree).
-        if not node.is_leaf():
-            value = 0
-
-        self.traversal_values.append(value)
-
     def compress_file(self, input_filename, output_filename):
         print("Reading {}...".format(input_filename))
 
@@ -142,27 +142,21 @@ class Huffman(BinaryTree):
         compressed = self.__compress(bytes_list)
         print("Compressed size : ", len(compressed))
 
-        # Find inorder and preorder sequences of the tree, thanks to these values, we'll be able to rebuild the tree.
-        # Each integers will be stored on 1 byte.
-
-        self.traversal_values.clear()
+        # There is a maximum of 256 leaves in the tree (because there are 256 different bytes), so the number of leaves
+        # in the tree will be encoded on 1 byte. A byte can be any value between 0 and 255. And the maximum number of
+        # leaves is 256. So we will store size-1. It's not a problem because the tree can't contain 0 leaf.
+        self.encoded_tree = ""  # Reset encoded tree
         self.inorder_traversal()
-        print("Inorder : ", self.traversal_values)
+        print("There are {} leaves in the tree.".format(self.leaves_count))
+        self.encoded_tree = "1" + format(self.leaves_count-1, "08b") + self.encoded_tree  # Pad with a 1 to keep zeros
+        print(self.encoded_tree)
 
-        # Traversal values are coded on 2 bytes, 256 leaves possible with (n-1 = 255) other nodes in the tree
-        to_store_in_the_file = len(self.traversal_values).to_bytes(2, byteorder='big')
-        print("to_store_in_file = ", to_store_in_the_file)
+        tree_big_int_format = int(self.encoded_tree, 2)
+        final_encoded_tree = tree_big_int_format.to_bytes((tree_big_int_format.bit_length() + 7) // 8, 'big')
 
-        to_store_in_the_file += bytes(self.traversal_values)
+        print("final_encoded_tree = ", final_encoded_tree)
 
-        self.traversal_values.clear()
-        self.preorder_traversal()
-        print("Preorder : ", self.traversal_values)
-        to_store_in_the_file += bytes(self.traversal_values)
-
-        print("traversal_size = ", len(self.traversal_values))
-
-        total_file_size = len(to_store_in_the_file) + len(compressed)
+        total_file_size = len(final_encoded_tree) + len(compressed)
 
         print("Total size output : {} bytes".format(total_file_size))
 
@@ -173,24 +167,29 @@ class Huffman(BinaryTree):
         print("Compression gain : {0:.2f}%".format(100 - total_file_size * 100 / len(bytes_list)))
 
         with open(output_filename, "wb") as output_file:
-            output_file.write(to_store_in_the_file)
+            output_file.write(final_encoded_tree)
             output_file.write(compressed)
+
+    def __decompress(self, compressed_data):
+        pass
 
     def decompress_file(self, input_filename, output_filename):
         # int.from_bytes(compressed, byteorder='big')
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
 
-        traversal_size = int.from_bytes(bytes_list[:2], byteorder='big')
-        print("bytes_list[:2] = ", bytes_list[:2])
-        print("traversal_size = ", traversal_size)
+        binary_string = ""
 
-        inorder = list(bytes_list[2:traversal_size + 2])
-        preorder = list(bytes_list[traversal_size + 2:2 * traversal_size + 2])
+        for byte in bytes_list:
+            binary_string += format(byte, "08b")
 
-        print("Inorder : ", inorder)
-        print("Preorder : ", preorder)
+        padding_index = 0
+        while binary_string[padding_index] == 0:
+            padding_index += 1
 
-        tree = self.build_tree_from(inorder, preorder)
+        binary_string = binary_string[padding_index+1:]  # Remove first zeros and the 1 padding
+        leaves_count = int(binary_string[:8], 2) + 1
+        print("There are {} leaves in the tree.".format(leaves_count))
+        tree_end_index = self.build_tree_from(binary_string[8:])
 
-        print("tree : ", tree)
+        self.__decompress(binary_string[tree_end_index:])
