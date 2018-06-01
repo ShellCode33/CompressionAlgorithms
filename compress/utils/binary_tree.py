@@ -46,7 +46,7 @@ class BinaryTree(object):
     """
     def __init__(self):
         self.root_node = None
-        self.pre_order_index = 0
+        self.leaves_count = 0
 
     def build_tree(self, values):
 
@@ -66,38 +66,22 @@ class BinaryTree(object):
             except IndexError:
                 self.root_node = node1
 
-    # https://www.geeksforgeeks.org/construct-tree-from-given-inorder-and-preorder-traversal/
-    def build_tree_from(self, inorder_values, preorder_values):
-        self.pre_order_index = 0  # Reset
-        self.__build_tree_from(inorder_values, preorder_values, 0, len(inorder_values) - 1)
+    def build_tree_from(self, binary_string):
 
-    def __build_tree_from(self, inorder_values, preorder_values, begin, end):
+        tree_end_index = 0
 
-        if begin > end:
-            return None
+        return tree_end_index  # Returns the index of the end
 
-        new_node = self.create_node()
-        new_node.value = preorder_values[self.pre_order_index]
-        self.pre_order_index += 1
-
-        if begin == end:
-            return new_node
-
-        print("begin: {} --- end: {}".format(begin, end))
-
-        inorder_index = begin + inorder_values[begin:end + 1].index(new_node.value)
-
-        new_node.left = self.__build_tree_from(inorder_values, preorder_values, begin, inorder_index - 1)
-        new_node.right = self.__build_tree_from(inorder_values, preorder_values, inorder_index + 1, end)
-
-        print("Node created. Its value is : ", new_node.value)
-
-        return new_node
+    def __build_tree_from(self):
+        pass
 
     def traversal_action(self, node):
         print(node.value)
 
     def inorder_traversal(self):
+
+        self.leaves_count = 0
+
         heap = []
         current_node = self.root_node
 
@@ -107,15 +91,26 @@ class BinaryTree(object):
                 current_node = current_node.left
             else:
                 current_node = heappop(heap)
+
+                if current_node.is_leaf():
+                    self.leaves_count += 1
+
                 self.traversal_action(current_node)
                 current_node = current_node.right
 
     def preorder_traversal(self):
+
+        self.leaves_count = 0
+
         heap = []
         heappush(heap, self.root_node)
 
         while heap:  # While there are items to pop
             current_node = heappop(heap)
+
+            if current_node.is_leaf():
+                self.leaves_count += 1
+
             self.traversal_action(current_node)
 
             if current_node.left is not None:
