@@ -31,7 +31,15 @@ if __name__ == "__main__":
         parser.error("This program doesn't support directory compressing yet.")
 
     if options.output is None:
-        options.output = args[0] + ".tor"
+        if options.compress:
+            options.output = args[0] + ".tor"
+        else:
+            tor_index = args[0].find(".tor")
+
+            if tor_index != -1:
+                options.output = args[0][:tor_index]
+            else:
+                options.output = args[0] + "_extracted"
 
     algo = None
 
