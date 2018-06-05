@@ -135,8 +135,8 @@ class Huffman(BinaryTree):
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
 
-        if len(bytes_list) == 0:
-            raise Exception("Input file is empty.")
+        if not bytes_list:
+            raise IOError("File is empty !")
 
         print("Input size : ", len(bytes_list))
         compressed = self.__compress(bytes_list)
@@ -177,6 +177,9 @@ class Huffman(BinaryTree):
         # int.from_bytes(compressed, byteorder='big')
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
+
+        if not bytes_list:
+            raise IOError("File is empty !")
 
         binary_string = ""
 

@@ -6,7 +6,7 @@ class LZW(object):
 
     Attributes
     ----------
-    bytes_dict : dict
+    translation_dict : dict
         Association between repeated bytes sequences and integers.
 
     Examples
@@ -23,16 +23,17 @@ class LZW(object):
     on 2^5 = 32 bits max. Which means the biggest supported dictionary is 2^32 = 4294967296 long. Which is more than
     enough.
     """
+
     def __init__(self):
-        self.bytes_dict = None
+        self.translation_dict = None
         self.max_size_integer_size = 5  # The integers size is encoded on 5 bits by default
         self.integers_size_bits = 0  # Max value must be 2**max_size_integer_size (= 32 by default)
 
     def __build_bytes_dictionary(self, decompression=False):
         if decompression:
-            self.bytes_dict = {byte: bytes([byte]) for byte in range(256)}
+            self.translation_dict = {byte: bytes([byte]) for byte in range(256)}
         else:
-            self.bytes_dict = {bytes([byte]): byte for byte in range(256)}
+            self.translation_dict = {bytes([byte]): byte for byte in range(256)}
 
     def __compress(self, bytes_list):
 
@@ -46,55 +47,62 @@ class LZW(object):
             byte_as_array = bytes([byte])
             current = pattern + byte_as_array
 
-            # if current in self.bytes_dict:  # Too heavy with big dictionaries
-            if self.bytes_dict.get(current) is not None:
+            if current in self.translation_dict:
                 pattern = current
             else:
-                self.bytes_dict[current] = len(self.bytes_dict)
-                compressed.append(self.bytes_dict[pattern])
+                self.translation_dict[current] = len(self.translation_dict)
+                compressed.append(self.translation_dict[pattern])
 
-                if biggest_integer < self.bytes_dict[pattern]:
-                    biggest_integer = self.bytes_dict[pattern]
+                if biggest_integer < self.translation_dict[pattern]:
+                    biggest_integer = self.translation_dict[pattern]
 
                 pattern = byte_as_array
 
-        if pattern:
-            compressed.append(self.bytes_dict[pattern])
+        compressed.append(self.translation_dict[pattern])
 
-            if biggest_integer < self.bytes_dict[pattern]:
-                biggest_integer = self.bytes_dict[pattern]
+        if biggest_integer < self.translation_dict[pattern]:
+            biggest_integer = self.translation_dict[pattern]
 
-        if biggest_integer > 2**(2**self.max_size_integer_size):
+        if biggest_integer > 2 ** (2 ** self.max_size_integer_size):
             # Shouldn't happen
             raise ValueError("Can't encode such value... Maybe you should increase the size of max_size_integer_size.")
 
         self.integers_size_bits = biggest_integer.bit_length()
         print("The biggest integer is {} so integers will be coded on {} bits.".format(biggest_integer,
                                                                                        self.integers_size_bits))
-
+        print(compressed)
         return compressed
 
     def compress_file(self, input_filename, output_filename):
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()
 
+        if not bytes_list:
+            raise IOError("File is empty !")
+
+        print(list(bytes_list))
+
         print("Input size : {} bytes.".format(len(bytes_list)))
         compressed = self.__compress(bytes_list)
 
-        big_int_compressed = 0
-
-        # TODO : bitwise operation is too heavy on such numbers, find another way. (1 bit of padding can be the solution...)
-
         print("Assembling integers together...")
-        for integer in compressed:
-            big_int_compressed <<= self.integers_size_bits
-            big_int_compressed += integer
 
-        to_store_in_file = big_int_compressed << self.max_size_integer_size
-        to_store_in_file += self.integers_size_bits
+        # Originally, each integer was added to a big one using bits shifting, but this method was way to slow.
+        # Strings are better for this purpose.
+        binary_string_compressed = "1"  # Padding with a 1 to keep the first zeros when converting to integer
+
+        # Add binary representation of the integers bit-length
+        binary_string_compressed += format(self.integers_size_bits, "0{}b".format(self.max_size_integer_size))
+
+        # https://waymoot.org/home/python_string/
+        # According to this, the fastest way to concatenate strings is to use join() on a list
+        bin_format = "0{}b".format(self.integers_size_bits)
+        binary_string_compressed += ''.join([format(byte, bin_format) for byte in compressed])
+
         print("Done.")
 
-        to_store_in_file = to_store_in_file.to_bytes((to_store_in_file.bit_length() + 7) // 8, 'big')
+        big_int_compress = int(binary_string_compressed, 2)
+        to_store_in_file = big_int_compress.to_bytes((big_int_compress.bit_length() + 7) // 8, 'big')
 
         total_file_size = len(to_store_in_file)
 
@@ -109,21 +117,50 @@ class LZW(object):
         with open(output_filename, "wb") as output_file:
             output_file.write(to_store_in_file)
 
-    def __decompress(self, bytes_list):
+    def __decompress(self, compressed_bytes_list):
         self.__build_bytes_dictionary(decompression=True)
 
-        return None
+        previous_code = compressed_bytes_list[0]
+        decompressed = self.translation_dict[previous_code]
 
-    def decompress_file(self, input_filename, output_filanem):
+        first_byte = None
+
+        for new_code in compressed_bytes_list[1:]:
+
+            try:
+                translation = self.translation_dict[new_code]
+            except KeyError:
+                translation = first_byte + self.translation_dict[previous_code]
+
+            decompressed += translation
+
+            first_byte = bytes([translation[0]])
+            self.translation_dict[len(self.translation_dict)] = self.translation_dict[previous_code] + first_byte
+
+            previous_code = new_code
+
+        return decompressed
+
+    def decompress_file(self, input_filename, output_filename):
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()
 
+        if not bytes_list:
+            raise IOError("File is empty !")
+
         big_int_compressed = int.from_bytes(bytes_list, 'big')
-        self.integers_size_bits = big_int_compressed & 0b11111
-        big_int_compressed >>= self.integers_size_bits
+        bits_string_compressed = format(big_int_compressed, "0b")
+        print(bits_string_compressed[1:self.max_size_integer_size + 1])
+        self.integers_size_bits = int(bits_string_compressed[1:self.max_size_integer_size + 1], 2)  # Skip first pad bit
 
         print("Integers are {} bits long.".format(self.integers_size_bits))
 
-        # TODO : gather integers one by one and create an integers list
+        compressed = []
 
-        self.__decompress(bytes_list)
+        for i in range(self.max_size_integer_size + 1, len(bits_string_compressed), self.integers_size_bits):
+            compressed.append(int(bits_string_compressed[i:i + self.integers_size_bits], 2))
+
+        decompressed = self.__decompress(compressed)
+
+        with open(output_filename, "wb") as output_file:
+            output_file.write(decompressed)
