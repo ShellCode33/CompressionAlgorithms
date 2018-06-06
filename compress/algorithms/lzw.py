@@ -48,7 +48,7 @@ class LZW(object):
             byte_as_array = bytes([byte])
             current = pattern + byte_as_array
 
-            if self.translation_dict.get(current) is not None:
+            if current in self.translation_dict:
                 pattern = current
             else:
                 self.translation_dict[current] = len(self.translation_dict)
