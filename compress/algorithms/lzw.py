@@ -24,7 +24,8 @@ class LZW(object):
     enough.
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
+        self.verbose = verbose
         self.translation_dict = None
         self.max_size_integer_size = 5  # The integers size is encoded on 5 bits by default
         self.integers_size_bits = 0  # Max value must be 2**max_size_integer_size (= 32 by default)
@@ -47,7 +48,7 @@ class LZW(object):
             byte_as_array = bytes([byte])
             current = pattern + byte_as_array
 
-            if current in self.translation_dict:
+            if self.translation_dict.get(current) is not None:
                 pattern = current
             else:
                 self.translation_dict[current] = len(self.translation_dict)
@@ -68,9 +69,10 @@ class LZW(object):
             raise ValueError("Can't encode such value... Maybe you should increase the size of max_size_integer_size.")
 
         self.integers_size_bits = biggest_integer.bit_length()
-        print("The biggest integer is {} so integers will be coded on {} bits.".format(biggest_integer,
-                                                                                       self.integers_size_bits))
-        print(compressed)
+
+        if self.verbose:
+            print("The biggest integer is {} so integers will be coded on {} bits.".format(biggest_integer,
+                                                                                           self.integers_size_bits))
         return compressed
 
     def compress_file(self, input_filename, output_filename):
@@ -80,12 +82,13 @@ class LZW(object):
         if not bytes_list:
             raise IOError("File is empty !")
 
-        print(list(bytes_list))
+        if self.verbose:
+            print("Input size : {} bytes.".format(len(bytes_list)))
 
-        print("Input size : {} bytes.".format(len(bytes_list)))
         compressed = self.__compress(bytes_list)
 
-        print("Assembling integers together...")
+        if self.verbose:
+            print("Assembling integers together...")
 
         # Originally, each integer was added to a big one using bits shifting, but this method was way to slow.
         # Strings are better for this purpose.
@@ -99,23 +102,30 @@ class LZW(object):
         bin_format = "0{}b".format(self.integers_size_bits)
         binary_string_compressed += ''.join([format(byte, bin_format) for byte in compressed])
 
-        print("Done.")
+        if self.verbose:
+            print("Done.")
 
         big_int_compress = int(binary_string_compressed, 2)
         to_store_in_file = big_int_compress.to_bytes((big_int_compress.bit_length() + 7) // 8, 'big')
 
         total_file_size = len(to_store_in_file)
 
-        print("Output : {} bytes".format(total_file_size))
+        if self.verbose:
+            print("Output : {} bytes".format(total_file_size))
 
         if len(bytes_list) <= total_file_size:
             raise Exception("Aborted. No gain, you shouldn't compress that file. (+{} bytes)".format(
                 total_file_size - len(bytes_list)))
 
-        print("Compression gain : {0:.2f}%".format(100 - total_file_size * 100 / len(bytes_list)))
+        compression_rate = 100 - total_file_size * 100 / len(bytes_list)
+
+        # Print anyway, even when not in verbose mode
+        print("Compression gain : {0:.2f}%".format(compression_rate))
 
         with open(output_filename, "wb") as output_file:
             output_file.write(to_store_in_file)
+
+        return compression_rate
 
     def __decompress(self, compressed_bytes_list):
         self.__build_bytes_dictionary(decompression=True)
@@ -153,7 +163,8 @@ class LZW(object):
         print(bits_string_compressed[1:self.max_size_integer_size + 1])
         self.integers_size_bits = int(bits_string_compressed[1:self.max_size_integer_size + 1], 2)  # Skip first pad bit
 
-        print("Integers are {} bits long.".format(self.integers_size_bits))
+        if self.verbose:
+            print("Integers are {} bits long.".format(self.integers_size_bits))
 
         compressed = []
 

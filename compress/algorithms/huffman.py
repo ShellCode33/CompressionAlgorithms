@@ -52,8 +52,9 @@ class Huffman(BinaryTree):
     it will be inefficient to compress small ones.
     """
 
-    def __init__(self):
+    def __init__(self, verbose=False):
         super().__init__()
+        self.verbose = verbose
         self.bytes_occurrences = {}
         self.huffman_code = {}
         self.encoded_tree = None
@@ -91,6 +92,8 @@ class Huffman(BinaryTree):
 
     def __find_bytes_occurrences(self, bytes_list):
 
+        self.bytes_occurrences.clear()
+
         # Count bytes
         for byte in bytes_list:
             try:
@@ -110,14 +113,20 @@ class Huffman(BinaryTree):
     def __compress(self, bytes_list):
 
         self.__find_bytes_occurrences(bytes_list)
-        print("Occurrences: " + str(self.bytes_occurrences))
-        print("Number of different bytes : {}".format(len(self.bytes_occurrences)))
+
+        if self.verbose:
+            print("Occurrences: " + str(self.bytes_occurrences))
+            print("Number of different bytes : {}".format(len(self.bytes_occurrences)))
 
         self.build_tree([HuffmanNode(self.bytes_occurrences[byte], byte) for byte in self.bytes_occurrences])
 
-        print("Tree: " + str(self.root_node))
+        if self.verbose:
+            print("Tree: " + str(self.root_node))
+
         self.__create_huffman_code(self.root_node)
-        print("Code: " + str(self.huffman_code))
+
+        if self.verbose:
+            print("Code: " + str(self.huffman_code))
 
         encoded_string = "1"  # Padding needed to convert to bytes, otherwise we will lose information (the first zeros)
 
@@ -130,7 +139,9 @@ class Huffman(BinaryTree):
         return int(encoded_string, 2).to_bytes((len(encoded_string) + 7) // 8, byteorder='big')
 
     def compress_file(self, input_filename, output_filename):
-        print("Reading {}...".format(input_filename))
+
+        if self.verbose:
+            print("Reading {}...".format(input_filename))
 
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
@@ -138,37 +149,50 @@ class Huffman(BinaryTree):
         if not bytes_list:
             raise IOError("File is empty !")
 
-        print("Input size : ", len(bytes_list))
+        if self.verbose:
+            print("Input size : ", len(bytes_list))
+
         compressed = self.__compress(bytes_list)
-        print("Compressed size : ", len(compressed))
+
+        if self.verbose:
+            print("Compressed size : ", len(compressed))
 
         # There is a maximum of 256 leaves in the tree (because there are 256 different bytes), so the number of leaves
         # in the tree will be encoded on 1 byte. A byte can be any value between 0 and 255. And the maximum number of
         # leaves is 256. So we will store size-1. It's not a problem because the tree can't contain 0 leaf.
         self.encoded_tree = ""  # Reset encoded tree
         self.inorder_traversal()
-        print("There are {} leaves in the tree.".format(self.leaves_count))
+
+        if self.verbose:
+            print("There are {} leaves in the tree.".format(self.leaves_count))
+
         self.encoded_tree = "1" + format(self.leaves_count-1, "08b") + self.encoded_tree  # Pad with a 1 to keep zeros
-        print(self.encoded_tree)
 
         tree_big_int_format = int(self.encoded_tree, 2)
         final_encoded_tree = tree_big_int_format.to_bytes((tree_big_int_format.bit_length() + 7) // 8, 'big')
 
-        print("final_encoded_tree = ", final_encoded_tree)
+        if self.verbose:
+            print("final_encoded_tree = ", final_encoded_tree)
 
         total_file_size = len(final_encoded_tree) + len(compressed)
 
-        print("Total size output : {} bytes".format(total_file_size))
+        if self.verbose:
+            print("Total size output : {} bytes".format(total_file_size))
 
         if len(bytes_list) <= total_file_size:
             raise Exception("Aborted. No gain, you shouldn't compress that file. (+{} bytes)".format(
                 total_file_size - len(bytes_list)))
 
-        print("Compression gain : {0:.2f}%".format(100 - total_file_size * 100 / len(bytes_list)))
+        compression_rate = 100 - total_file_size * 100 / len(bytes_list)
+
+        # Print anyway, even when not in verbose mode
+        print("Compression gain : {0:.2f}%".format(compression_rate))
 
         with open(output_filename, "wb") as output_file:
             output_file.write(final_encoded_tree)
             output_file.write(compressed)
+
+        return compression_rate
 
     def __decompress(self, compressed_data):
         pass
@@ -192,7 +216,10 @@ class Huffman(BinaryTree):
 
         binary_string = binary_string[padding_index+1:]  # Remove first zeros and the 1 padding
         leaves_count = int(binary_string[:8], 2) + 1
-        print("There are {} leaves in the tree.".format(leaves_count))
+
+        if self.verbose:
+            print("There are {} leaves in the tree.".format(leaves_count))
+
         tree_end_index = self.build_tree_from(binary_string[8:])
 
         self.__decompress(binary_string[tree_end_index:])
