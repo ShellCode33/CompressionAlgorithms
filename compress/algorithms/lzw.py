@@ -160,7 +160,7 @@ class LZW(object):
 
         big_int_compressed = int.from_bytes(bytes_list, 'big')
         bits_string_compressed = format(big_int_compressed, "0b")
-        print(bits_string_compressed[1:self.max_size_integer_size + 1])
+
         self.integers_size_bits = int(bits_string_compressed[1:self.max_size_integer_size + 1], 2)  # Skip first pad bit
 
         if self.verbose:
