@@ -66,12 +66,6 @@ class BinaryTree(object):
             except IndexError:
                 self.root_node = node1
 
-    def build_tree_from(self, binary_string):
-
-        tree_end_index = 0
-
-        return tree_end_index  # Returns the index of the end
-
     def __build_tree_from(self):
         pass
 
