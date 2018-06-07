@@ -66,9 +66,6 @@ class BinaryTree(object):
             except IndexError:
                 self.root_node = node1
 
-    def __build_tree_from(self):
-        pass
-
     def traversal_action(self, node):
         print(node.value)
 
