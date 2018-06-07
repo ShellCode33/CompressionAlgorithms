@@ -110,6 +110,38 @@ class Huffman(BinaryTree):
             self.__create_huffman_code(node.left, code + "0")
             self.__create_huffman_code(node.right, code + "1")
 
+    def build_tree_from(self, binary_string, leaves):
+
+        tree_end_index = 0
+        current_index = 0
+        leaves_count = 0
+        chars = [] # Remplir avec les caractères non chiffrés dans l'ordre des leafs
+        charIndex = 0
+        root = self.create_node()
+        stack = [root]
+
+        while stack and leaves_count < leaves:
+            n = self.create_node()
+            n = stack.pop()
+            bit = binary_string[current_index]
+            if not bit:
+                n.left = self.create_node()
+                stack.insert(len(stack), n.left) #push n.left at the end of the stack
+                n.right = self.create_node()
+                stack.insert(len(stack), n.right)
+                current_index += 1
+            else:
+                #n.value = chars[charIndex]
+                charIndex += 1
+                current_index += 9
+                leaves_count += 1
+
+        self.__create_huffman_code(root)
+
+        tree_end_index += 8 # data of the last leaf
+
+        return tree_end_index  # Returns the index of the end
+
     def __compress(self, bytes_list):
 
         self.__find_bytes_occurrences(bytes_list)
@@ -195,7 +227,22 @@ class Huffman(BinaryTree):
         return compression_rate
 
     def __decompress(self, compressed_data):
-        pass
+
+        current_char = ""
+        final_decode = []
+
+        print("huffman_code : {}".format(self.huffman_code))
+
+        for i in range(len(compressed_data)):
+            current_char += compressed_data[i]
+            for k,v in self.huffman_code:
+                if current_char == v: # current char is in huffman_code ?
+                    final_decode += int(k) # add its decoded char into final_decode
+                    current_char = "" #reset current_char
+
+        print("Final decode : {}".format(final_decode))
+
+        return bytes(final_decode)
 
     def decompress_file(self, input_filename, output_filename):
         # int.from_bytes(compressed, byteorder='big')
@@ -220,6 +267,9 @@ class Huffman(BinaryTree):
         if self.verbose:
             print("There are {} leaves in the tree.".format(leaves_count))
 
-        tree_end_index = self.build_tree_from(binary_string[8:])
+        tree_end_index = self.build_tree_from(binary_string[8:], leaves_count)
 
-        self.__decompress(binary_string[tree_end_index:])
+        decompressed = self.__decompress(binary_string[tree_end_index:])
+
+        with open(output_filename, "wb") as output_file:
+            output_file.write(decompressed)
