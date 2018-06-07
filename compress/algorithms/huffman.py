@@ -145,7 +145,7 @@ class Huffman(BinaryTree):
             current_index += 9  # Skip the 1 and the 8 following bits
         else:
             current_node.right.value = 0
-            current_index = self.__build_tree_from(binary_string[current_index+1:], current_node.right, current_index+1)
+            current_index = self.__build_tree_from(binary_string, current_node.right, current_index+1)
 
         return current_index
 

@@ -46,7 +46,6 @@ class BinaryTree(object):
     """
     def __init__(self):
         self.root_node = None
-        self.leaves_count = 0
 
     def build_tree(self, values):
 
@@ -71,8 +70,6 @@ class BinaryTree(object):
 
     def inorder_traversal(self):
 
-        self.leaves_count = 0
-
         heap = []
         current_node = self.root_node
 
@@ -82,25 +79,16 @@ class BinaryTree(object):
                 current_node = current_node.left
             else:
                 current_node = heappop(heap)
-
-                if current_node.is_leaf():
-                    self.leaves_count += 1
-
                 self.traversal_action(current_node)
                 current_node = current_node.right
 
     def preorder_traversal(self):
-
-        self.leaves_count = 0
 
         heap = []
         heappush(heap, self.root_node)
 
         while heap:  # While there are items to pop
             current_node = heappop(heap)
-
-            if current_node.is_leaf():
-                self.leaves_count += 1
 
             self.traversal_action(current_node)
 
