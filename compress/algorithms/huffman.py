@@ -111,7 +111,7 @@ class Huffman(BinaryTree):
             self.__create_huffman_code(node.right, code + "1")
 
     def build_tree_from(self, binary_string):
-        """ Recreates the tree when minimized by the traversal_action and stored to a file.
+        """ Recreates the tree when minimized by the traversal_actions and stored to a file.
 
         Attributes
         ----------
@@ -231,12 +231,6 @@ class Huffman(BinaryTree):
 
     def __decompress(self, compressed_data_bits):
 
-        padding_index = 0
-        while compressed_data_bits[padding_index] == "0":
-            padding_index += 1
-
-        compressed_data_bits = compressed_data_bits[padding_index + 1:]  # Remove first zeros and the 1 padding
-
         decompressed = []
         current_node = self.root_node
 
@@ -255,7 +249,7 @@ class Huffman(BinaryTree):
         return bytes(decompressed)
 
     def decompress_file(self, input_filename, output_filename):
-        # int.from_bytes(compressed, byteorder='big')
+
         with open(input_filename, "rb") as input_file:
             bytes_list = input_file.read()  # All the file will be in memory, can be a problem with huge files.
 
@@ -273,8 +267,18 @@ class Huffman(BinaryTree):
 
         binary_string = binary_string[padding_index+1:]  # Remove first zeros and the 1 padding
         tree_end_index = self.build_tree_from(binary_string)
-        print("tree: ", self.root_node)
-        decompressed = self.__decompress(binary_string[tree_end_index:])
-        print(str(decompressed))
-        #with open(output_filename, "wb") as output_file:
-        #    output_file.write(decompressed)
+        binary_string = binary_string[tree_end_index:]
+
+        if self.verbose:
+            print("Rebuilt tree: ", self.root_node)
+
+        padding_index = 0
+        while binary_string[padding_index] == "0":
+            padding_index += 1
+
+        binary_string = binary_string[padding_index + 1:]  # Remove first zeros and the 1 padding
+
+        decompressed = self.__decompress(binary_string)
+
+        with open(output_filename, "wb") as output_file:
+            output_file.write(decompressed)
