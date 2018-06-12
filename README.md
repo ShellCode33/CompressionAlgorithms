@@ -14,7 +14,7 @@ Options:
                         Set the output file name, default is the same as input
                         + tor extension.
   -d, --decompress      Decompress the file.
-  --benchmark           Start benchmarking compession algorithm
+  --benchmark           Start benchmarking compession algorithms.
 ```
 
 ## Benchmark
