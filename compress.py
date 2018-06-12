@@ -87,7 +87,7 @@ if __name__ == "__main__":
                       help="Decompress the file.")
 
     parser.add_option("--benchmark", action="store_true", dest="benchmark",
-                      help="Start benchmarking compession algorithm")
+                      help="Start benchmarking compession algorithms.")
 
     (options, args) = parser.parse_args()
 
