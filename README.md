@@ -6,7 +6,7 @@ Huffman and LZW algorithms written in Python 3.
 Usage: compress.py [options] file
 
 Options:
-  -h, --help            show this help message and exit
+  -h, --help            Show this help message and exit.
   -v, --verbose         Set verbose mode to understand what's underneath.
   -a ALGO, --algo=ALGO  Set the algorithm you want to use (Huffman or LZW)
                         default is LZW.
